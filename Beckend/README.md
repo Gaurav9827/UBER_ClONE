@@ -199,3 +199,120 @@ curl -X POST http://localhost:5000/users/login \
 - The returned authentication token (JWT) can be used for subsequent authenticated requests
 - Credentials must match an existing user account in the database
 - Invalid credentials will result in an authentication failure
+
+---
+
+## User Profile Endpoint
+
+### Endpoint
+```
+GET /users/profile
+```
+
+### Description
+This endpoint retrieves the authenticated user's profile information. It requires a valid authentication token and returns the logged-in user's details.
+
+### Authentication
+This is a **protected endpoint** that requires authentication. The token must be provided in one of the following ways:
+- HTTP Header: `Authorization: Bearer <token>`
+- Cookie: `token=<token>`
+
+### Request Parameters
+No request body is required. Authentication is handled via middleware.
+
+### Response
+
+#### Success Response (200 OK)
+```json
+{
+  "_id": "user_id",
+  "fullname": {
+    "firstname": "John",
+    "lastname": "Doe"
+  },
+  "email": "john@example.com"
+}
+```
+
+#### Error Response (401 Unauthorized)
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+### Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `200` | OK | User profile successfully retrieved. |
+| `401` | Unauthorized | Missing, invalid, or expired authentication token. |
+
+### Example Request
+```bash
+curl -X GET http://localhost:5000/users/profile \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Notes
+
+- This endpoint requires a valid authentication token obtained from the `/users/register` or `/users/login` endpoints
+- Only authenticated users can access their own profile information
+- The token is validated by the authentication middleware before the request reaches the controller
+
+---
+
+## User Logout Endpoint
+
+### Endpoint
+```
+GET /users/logout
+```
+
+### Description
+This endpoint logs out the authenticated user by clearing the authentication token and adding it to a blacklist to prevent further use. It invalidates the user's session and requires a valid authentication token.
+
+### Authentication
+This is a **protected endpoint** that requires authentication. The token must be provided in one of the following ways:
+- HTTP Header: `Authorization: Bearer <token>`
+- Cookie: `token=<token>`
+
+### Request Parameters
+No request body is required. Authentication is handled via middleware.
+
+### Response
+
+#### Success Response (200 OK)
+```json
+{
+  "message": "Logged out"
+}
+```
+
+#### Error Response (401 Unauthorized)
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+### Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `200` | OK | User successfully logged out. Token has been blacklisted. |
+| `401` | Unauthorized | Missing, invalid, or expired authentication token. |
+
+### Example Request
+```bash
+curl -X GET http://localhost:5000/users/logout \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Notes
+
+- This endpoint requires a valid authentication token obtained from the `/users/register` or `/users/login` endpoints
+- The token is added to the blacklist collection, preventing it from being used for future authenticated requests
+- The `token` cookie is cleared from the client's browser
+- After logout, the user must log in again to get a new valid token
+- The token is validated by the authentication middleware before the request reaches the controller
