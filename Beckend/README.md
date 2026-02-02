@@ -475,3 +475,227 @@ curl -X POST http://localhost:5000/captains/register \
 - Email addresses must be unique - attempting to register with an existing email will fail
 - All vehicle information is required for captain registration
 - The vehicle type is restricted to specific types for consistency and operational purposes
+
+---
+
+## Captain Login Endpoint
+
+### Endpoint
+```
+POST /captains/login
+```
+
+### Description
+This endpoint allows registered captains to log into the UBER Clone application. It validates the email and password, and returns an authentication token upon successful authentication.
+
+### Request Body
+The request must be sent as JSON with the following structure:
+
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+### Request Parameters
+
+| Field | Type | Required | Constraints | Description |
+|-------|------|----------|-------------|-------------|
+| `email` | String | Yes | Valid email format | Captain's registered email address |
+| `password` | String | Yes | Min length: 6 characters | Captain's password |
+
+### Response
+
+#### Success Response (200 OK)
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "captain": {
+    "_id": "captain_id",
+    "fullname": {
+      "firstname": "Jane",
+      "lastname": "Smith"
+    },
+    "email": "jane@example.com",
+    "vehicle": {
+      "color": "Black",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+#### Error Response (400 Bad Request)
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid Email",
+      "param": "email",
+      "location": "body"
+    },
+    {
+      "msg": "Password must be at least 6 characters long",
+      "param": "password",
+      "location": "body"
+    }
+  ]
+}
+```
+
+### Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `200` | OK | Captain successfully authenticated. Authentication token is provided. |
+| `400` | Bad Request | Validation error. Invalid email, password too short, or missing required fields. |
+| `401` | Unauthorized | Invalid email or password combination. |
+
+### Example Request
+```bash
+curl -X POST http://localhost:5000/captains/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "jane@example.com",
+    "password": "password123"
+  }'
+```
+
+### Validation Rules
+
+- **Email**: Must be a valid email format
+- **Password**: Minimum 6 characters required
+
+### Notes
+
+- The returned authentication token (JWT) can be used for subsequent authenticated requests
+- Credentials must match an existing captain account in the database
+- Invalid credentials will result in an authentication failure
+
+---
+
+## Captain Profile Endpoint
+
+### Endpoint
+```
+GET /captains/profile
+```
+
+### Description
+This endpoint retrieves the authenticated captain's profile information. It requires a valid authentication token and returns the logged-in captain's details including vehicle information.
+
+### Authentication
+This is a **protected endpoint** that requires authentication. The token must be provided in one of the following ways:
+- HTTP Header: `Authorization: Bearer <token>`
+- Cookie: `token=<token>`
+
+### Request Parameters
+No request body is required. Authentication is handled via middleware.
+
+### Response
+
+#### Success Response (200 OK)
+```json
+{
+  "captain": {
+    "_id": "captain_id",
+    "fullname": {
+      "firstname": "Jane",
+      "lastname": "Smith"
+    },
+    "email": "jane@example.com",
+    "vehicle": {
+      "color": "Black",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+#### Error Response (401 Unauthorized)
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+### Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `200` | OK | Captain profile successfully retrieved. |
+| `401` | Unauthorized | Missing, invalid, or expired authentication token. |
+
+### Example Request
+```bash
+curl -X GET http://localhost:5000/captains/profile \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Notes
+
+- This endpoint requires a valid authentication token obtained from the `/captains/register` or `/captains/login` endpoints
+- Only authenticated captains can access their own profile information
+- The token is validated by the authentication middleware before the request reaches the controller
+
+---
+
+## Captain Logout Endpoint
+
+### Endpoint
+```
+GET /captains/logout
+```
+
+### Description
+This endpoint logs out the authenticated captain by clearing the authentication token and adding it to a blacklist to prevent further use. It invalidates the captain's session and requires a valid authentication token.
+
+### Authentication
+This is a **protected endpoint** that requires authentication. The token must be provided in one of the following ways:
+- HTTP Header: `Authorization: Bearer <token>`
+- Cookie: `token=<token>`
+
+### Request Parameters
+No request body is required. Authentication is handled via middleware.
+
+### Response
+
+#### Success Response (200 OK)
+```json
+{
+  "message": "Logout successfully"
+}
+```
+
+#### Error Response (401 Unauthorized)
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+### Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `200` | OK | Captain successfully logged out. Token has been blacklisted. |
+| `401` | Unauthorized | Missing, invalid, or expired authentication token. |
+
+### Example Request
+```bash
+curl -X GET http://localhost:5000/captains/logout \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Notes
+
+- This endpoint requires a valid authentication token obtained from the `/captains/register` or `/captains/login` endpoints
+- The token is added to the blacklist collection, preventing it from being used for future authenticated requests
+- The `token` cookie is cleared from the client's browser
+- After logout, the captain must log in again to get a new valid token
+- The token is validated by the authentication middleware before the request reaches the controller
