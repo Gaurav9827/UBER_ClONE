@@ -316,3 +316,162 @@ curl -X GET http://localhost:5000/users/logout \
 - The `token` cookie is cleared from the client's browser
 - After logout, the user must log in again to get a new valid token
 - The token is validated by the authentication middleware before the request reaches the controller
+
+---
+
+# Captain Routes
+
+## Captain Registration Endpoint
+
+### Endpoint
+```
+POST /captains/register
+```
+
+### Description
+This endpoint allows new captains to register for the UBER Clone application. It validates the input data, hashes the password, creates a new captain account with vehicle information in the database, and returns an authentication token.
+
+### Request Body
+The request must be sent as JSON with the following structure:
+
+```json
+{
+  "fullname": {
+    "firstname": "string",
+    "lastname": "string"
+  },
+  "email": "string",
+  "password": "string",
+  "vehicle": {
+    "color": "string",
+    "plate": "string",
+    "capacity": "integer",
+    "vehicleType": "string"
+  }
+}
+```
+
+### Request Parameters
+
+| Field | Type | Required | Constraints | Description |
+|-------|------|----------|-------------|-------------|
+| `fullname.firstname` | String | Yes | Min length: 3 characters | Captain's first name |
+| `fullname.lastname` | String | No | Min length: 3 characters | Captain's last name |
+| `email` | String | Yes | Valid email format | Captain's email address (must be unique) |
+| `password` | String | Yes | Min length: 6 characters | Captain's password |
+| `vehicle.color` | String | Yes | Min length: 3 characters | Vehicle color (e.g., "Black", "White", "Silver") |
+| `vehicle.plate` | String | Yes | Min length: 3 characters | Vehicle registration plate number |
+| `vehicle.capacity` | Integer | Yes | Min value: 1 | Number of passengers the vehicle can accommodate |
+| `vehicle.vehicleType` | String | Yes | Must be "car", "motorcycle", or "auto" | Type of vehicle |
+
+### Response
+
+#### Success Response (201 Created)
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "captain": {
+    "_id": "captain_id",
+    "fullname": {
+      "firstname": "Jane",
+      "lastname": "Smith"
+    },
+    "email": "jane@example.com",
+    "vehicle": {
+      "color": "Black",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+#### Error Response (400 Bad Request)
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid Email",
+      "param": "email",
+      "location": "body"
+    },
+    {
+      "msg": "First name must be at least 3 characters long",
+      "param": "fullname.firstname",
+      "location": "body"
+    },
+    {
+      "msg": "Password must be at least 6 characters long",
+      "param": "password",
+      "location": "body"
+    },
+    {
+      "msg": "Color must be at least 3 characters long",
+      "param": "vehicle.color",
+      "location": "body"
+    },
+    {
+      "msg": "Plate must be at least 3 characters long",
+      "param": "vehicle.plate",
+      "location": "body"
+    },
+    {
+      "msg": "Capacity must be at least 1",
+      "param": "vehicle.capacity",
+      "location": "body"
+    },
+    {
+      "msg": "Invalid vehicle type",
+      "param": "vehicle.vehicleType",
+      "location": "body"
+    }
+  ]
+}
+```
+
+### Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `201` | Created | Captain successfully registered. Authentication token is provided. |
+| `400` | Bad Request | Validation error. Invalid input, missing required fields, or invalid vehicle type. |
+
+### Example Request
+```bash
+curl -X POST http://localhost:5000/captains/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullname": {
+      "firstname": "Jane",
+      "lastname": "Smith"
+    },
+    "email": "jane@example.com",
+    "password": "password123",
+    "vehicle": {
+      "color": "Black",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }'
+```
+
+### Validation Rules
+
+- **Email**: Must be a valid email format and unique
+- **First Name**: Minimum 3 characters required
+- **Last Name**: Minimum 3 characters (optional field)
+- **Password**: Minimum 6 characters required, will be hashed using bcrypt
+- **Vehicle Color**: Minimum 3 characters required
+- **Vehicle Plate**: Minimum 3 characters required
+- **Vehicle Capacity**: Must be an integer with minimum value of 1
+- **Vehicle Type**: Must be one of: "car", "motorcycle", or "auto"
+
+### Notes
+
+- Passwords are automatically hashed using bcrypt before being stored in the database
+- The returned authentication token (JWT) can be used for subsequent authenticated requests
+- Email addresses must be unique - attempting to register with an existing email will fail
+- All vehicle information is required for captain registration
+- The vehicle type is restricted to specific types for consistency and operational purposes
